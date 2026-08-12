@@ -143,6 +143,13 @@ h1, h2, h3, .logo-img {
     box-shadow: 0 15px 30px rgba(0, 219, 162, 0.4);
 }
 
+.cta-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .version-info {
     margin-top: 1.5rem;
     font-size: 0.85rem !important;
@@ -405,6 +412,10 @@ h1, h2, h3, .logo-img {
 
     .hero-content {
         margin: 0 auto;
+    }
+    
+    .cta-group {
+        justify-content: center;
     }
     
     .phone-mockup {
