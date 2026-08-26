@@ -174,7 +174,7 @@
             const { error } = await client.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin + window.location.pathname
+                    redirectTo: 'https://www.solas-live.online/seller-coin/'
                 }
             });
             if (error) showAlert(loginAlert, error.message);
