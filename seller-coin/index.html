@@ -124,9 +124,8 @@
                 </div>
             </div>
 
-            <button id="btn-confirm-recharge" class="btn btn-action">
-                <span id="btn-recharge-text">Review recharge</span>
-                <div id="btn-recharge-loader" class="loader" style="display: none;"></div>
+            <button id="btn-review-recharge" class="btn btn-action">
+                <span>Review recharge</span>
             </button>
         </div>
 
@@ -137,6 +136,41 @@
             </div>
             <div id="history-list" style="max-height: 380px; overflow-y: auto;">
                 <div class="text-center text-muted" style="padding: 30px;">Loading history...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CENTERED RESPONSIVE CONFIRMATION MODAL -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-card">
+            <div class="modal-icon-badge">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"/>
+                    <path d="M9 12L11 14L15 10"/>
+                </svg>
+            </div>
+            <h3 style="margin-bottom: 4px;">Confirm Recharge</h3>
+            <p class="text-muted" style="font-size: 0.85rem;">Please review transfer details carefully</p>
+
+            <div class="modal-recipient-box">
+                <img id="modal-recipient-avatar" class="recipient-avatar" src="/2.png" alt="avatar">
+                <div style="overflow: hidden;">
+                    <div id="modal-recipient-name" class="recipient-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Mantika</div>
+                    <div id="modal-recipient-id" class="recipient-id">ID: 600409677</div>
+                </div>
+            </div>
+
+            <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Amount to Transfer</div>
+            <div class="modal-amount-display">
+                <span id="modal-amount-text">0</span> Golds
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="modal-btn-cancel" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="modal-btn-confirm" class="btn btn-action" style="margin-top: 0;">
+                    <span id="modal-confirm-text">Confirm & Send</span>
+                    <div id="modal-confirm-loader" class="loader" style="display: none;"></div>
+                </button>
             </div>
         </div>
     </div>
@@ -161,9 +195,7 @@
         const recipientAvatar = document.getElementById('recipient-avatar');
         const recipientName = document.getElementById('recipient-name');
         const recipientPublicIdLabel = document.getElementById('recipient-public-id-label');
-        const btnConfirmRecharge = document.getElementById('btn-confirm-recharge');
-        const btnRechargeText = document.getElementById('btn-recharge-text');
-        const btnRechargeLoader = document.getElementById('btn-recharge-loader');
+        const btnReviewRecharge = document.getElementById('btn-review-recharge');
         const btnRefreshBalance = document.getElementById('btn-refresh-balance');
         
         const tabRechargeBtn = document.getElementById('tab-recharge-btn');
@@ -172,6 +204,17 @@
         const viewHistory = document.getElementById('view-history');
         const historyList = document.getElementById('history-list');
         const inputHistorySearch = document.getElementById('input-history-search');
+
+        // Modal Elements
+        const confirmModal = document.getElementById('confirm-modal');
+        const modalRecipientAvatar = document.getElementById('modal-recipient-avatar');
+        const modalRecipientName = document.getElementById('modal-recipient-name');
+        const modalRecipientId = document.getElementById('modal-recipient-id');
+        const modalAmountText = document.getElementById('modal-amount-text');
+        const modalBtnCancel = document.getElementById('modal-btn-cancel');
+        const modalBtnConfirm = document.getElementById('modal-btn-confirm');
+        const modalConfirmText = document.getElementById('modal-confirm-text');
+        const modalConfirmLoader = document.getElementById('modal-confirm-loader');
 
         let currentRecipient = null;
 
@@ -298,8 +341,8 @@
             }
         });
 
-        // Recharge Submission
-        btnConfirmRecharge.addEventListener('click', async () => {
+        // Open Review Modal
+        btnReviewRecharge.addEventListener('click', () => {
             const id = inputPublicId.value.trim();
             const amount = parseInt(inputAmount.value);
 
@@ -312,95 +355,33 @@
                 return;
             }
 
-            if (!confirm(`Are you sure you want to recharge ${amount.toLocaleString()} Golds to ${currentRecipient.nickname} (${currentRecipient.public_id})?`)) {
-                return;
-            }
+            // Populate modal
+            modalRecipientName.textContent = currentRecipient.nickname || "User";
+            modalRecipientId.textContent = "ID: " + currentRecipient.public_id;
+            modalRecipientAvatar.src = currentRecipient.avatar_url || "/2.png";
+            modalAmountText.textContent = amount.toLocaleString();
 
-            btnConfirmRecharge.disabled = true;
-            btnRechargeText.style.display = 'none';
-            btnRechargeLoader.style.display = 'block';
-
-            try {
-                const { data, error } = await client.rpc('seller_recharge_user', {
-                    p_public_id: id,
-                    p_coin_amount: amount
-                });
-
-                if (error) throw error;
-
-                showAlert(rechargeAlert, `Successfully recharged ${amount.toLocaleString()} Golds to ${currentRecipient.nickname}!`, 'success');
-                inputAmount.value = "";
-                await loadBalance();
-            } catch (err) {
-                showAlert(rechargeAlert, err.message || "Failed to process recharge");
-            } finally {
-                btnConfirmRecharge.disabled = false;
-                btnRechargeText.style.display = 'block';
-                btnRechargeLoader.style.display = 'none';
-            }
+            confirmModal.classList.add('active');
         });
 
-        // Load History
-        async function loadHistory() {
-            historyList.innerHTML = '<div class="text-center text-muted" style="padding: 20px;">Loading...</div>';
-            try {
-                const query = inputHistorySearch.value.trim();
-                const { data, error } = await client.rpc('get_coin_seller_activity_history', {
-                    p_query: query,
-                    p_limit: 50
-                });
-                if (error) throw error;
-                if (!data || data.length === 0) {
-                    historyList.innerHTML = '<div class="text-center text-muted" style="padding: 30px;">No transactions found</div>';
-                    return;
-                }
-                historyList.innerHTML = data.map(item => `
-                    <div class="history-item">
-                        <div class="history-info">
-                            <img src="${item.recipient_avatar_url || '/2.png'}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #eee;">
-                            <div>
-                                <div style="font-weight: 700; font-size: 0.9rem;">${item.recipient_name || 'User'}</div>
-                                <div style="font-size: 0.78rem; color: #64748B;">ID: ${item.recipient_public_id || 'N/A'} · ${new Date(item.created_at).toLocaleDateString()}</div>
-                            </div>
-                        </div>
-                        <div class="history-amount">-${parseInt(item.coin_amount).toLocaleString()} G</div>
-                    </div>
-                `).join('');
-            } catch (err) {
-                historyList.innerHTML = `<div class="text-center alert alert-error" style="display:block;">${err.message || 'Failed to load history'}</div>`;
-            }
+        function closeModal() {
+            confirmModal.classList.remove('active');
         }
 
-        let searchTimeout;
-        inputHistorySearch.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(loadHistory, 400);
+        modalBtnCancel.addEventListener('click', closeModal);
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) closeModal();
         });
 
-        // Login action
-        document.getElementById('btn-login').addEventListener('click', async () => {
-            const { error } = await client.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: 'https://www.solas-live.online/seller-coin/'
-                }
-            });
-            if (error) showAlert(loginAlert, error.message);
-        });
+        // Confirm & Execute Recharge
+        modalBtnConfirm.addEventListener('click', async () => {
+            const id = currentRecipient.public_id.toString();
+            const amount = parseInt(inputAmount.value);
 
-        // Logout action
-        document.getElementById('btn-logout').addEventListener('click', async () => {
-            await client.auth.signOut();
-        });
+            modalBtnConfirm.disabled = true;
+            modalBtnCancel.disabled = true;
+            modalConfirmText.style.display = 'none';
+            modalConfirmLoader.style.display = 'block';
 
-        // Initial check
-        client.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                checkAccess(session.user);
-            } else {
-                showSection(loginSec);
-            }
-        });
-    </script>
-</body>
-</html>
+            try {
+                const { data, error } = await client.rpc('seller_recharge_user', {\n                    p_public_id: id,\n                    p_coin_amount: amount\n                });\n\n                if (error) throw error;\n\n                closeModal();\n                showAlert(rechargeAlert, `Successfully recharged ${amount.toLocaleString()} Golds to ${currentRecipient.nickname}!`, 'success');\n                inputAmount.value = \"\";\n                await loadBalance();\n            } catch (err) {\n                closeModal();\n                showAlert(rechargeAlert, err.message || \"Failed to process recharge\");\n            } finally {\n                modalBtnConfirm.disabled = false;\n                modalBtnCancel.disabled = false;\n                modalConfirmText.style.display = 'block';\n                modalConfirmLoader.style.display = 'none';\n            }\n        });\n\n        // Load History\n        async function loadHistory() {\n            historyList.innerHTML = '<div class=\"text-center text-muted\" style=\"padding: 20px;\">Loading...</div>';\n            try {\n                const query = inputHistorySearch.value.trim();\n                const { data, error } = await client.rpc('get_coin_seller_activity_history', {\n                    p_query: query,\n                    p_limit: 50\n                });\n                if (error) throw error;\n                if (!data || data.length === 0) {\n                    historyList.innerHTML = '<div class=\"text-center text-muted\" style=\"padding: 30px;\">No transactions found</div>';\n                    return;\n                }\n                historyList.innerHTML = data.map(item => `\n                    <div class=\"history-item\">\n                        <div class=\"history-info\">\n                            <img src=\"${item.recipient_avatar_url || '/2.png'}\" style=\"width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #eee;\">\n                            <div>\n                                <div style=\"font-weight: 700; font-size: 0.9rem;\">${item.recipient_name || 'User'}</div>\n                                <div style=\"font-size: 0.78rem; color: #64748B;\">ID: ${item.recipient_public_id || 'N/A'} · ${new Date(item.created_at).toLocaleDateString()}</div>\n                            </div>\n                        </div>\n                        <div class=\"history-amount\">-${parseInt(item.coin_amount).toLocaleString()} G</div>\n                    </div>\n                `).join('');\n            } catch (err) {\n                historyList.innerHTML = `<div class=\"text-center alert alert-error\" style=\"display:block;\">${err.message || 'Failed to load history'}</div>`;\n            }\n        }\n\n        let searchTimeout;\n        inputHistorySearch.addEventListener('input', () => {\n            clearTimeout(searchTimeout);\n            searchTimeout = setTimeout(loadHistory, 400);\n        });\n\n        // Login action\n        document.getElementById('btn-login').addEventListener('click', async () => {\n            const { error } = await client.auth.signInWithOAuth({\n                provider: 'google',\n                options: {\n                    redirectTo: 'https://www.solas-live.online/seller-coin/'\n                }\n            });\n            if (error) showAlert(loginAlert, error.message);\n        });\n\n        // Logout action\n        document.getElementById('btn-logout').addEventListener('click', async () => {\n            await client.auth.signOut();\n        });\n\n        // Initial check\n        client.auth.getSession().then(({ data: { session } }) => {\n            if (session) {\n                checkAccess(session.user);\n            } else {\n                showSection(loginSec);\n            }\n        });\n    </script>\n</body>\n</html>\n
