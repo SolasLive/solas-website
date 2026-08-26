@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/seller-coin/styles.css">
-    <!-- Load Supabase from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -43,7 +42,6 @@
 
     <!-- DASHBOARD SECTION -->
     <div class="card" id="dashboard-section">
-        <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <img src="/2.png" alt="My Solas" style="height: 22px;">
@@ -52,7 +50,6 @@
             <button id="btn-logout" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: 600; font-size: 0.85rem; font-family: 'Inter';">Sign Out</button>
         </div>
 
-        <!-- Navigation Tabs -->
         <div class="nav-tabs">
             <button class="tab-btn active" id="tab-recharge-btn">Recharge</button>
             <button class="tab-btn" id="tab-history-btn">History</button>
@@ -60,7 +57,6 @@
 
         <!-- RECHARGE TAB VIEW -->
         <div id="view-recharge">
-            <!-- Balance Card -->
             <div class="balance-card">
                 <div>
                     <div class="balance-label">Available seller balance</div>
@@ -77,7 +73,6 @@
 
             <div id="recharge-alert" class="alert"></div>
 
-            <!-- Find Recipient Block -->
             <div class="section-block">
                 <div class="section-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -92,7 +87,6 @@
                     <button id="btn-find-user" class="btn-sm">Find</button>
                 </div>
 
-                <!-- Preview Card when found -->
                 <div id="recipient-preview" class="recipient-preview" style="display: none;">
                     <img id="recipient-avatar" class="recipient-avatar" src="/2.png" alt="avatar">
                     <div>
@@ -102,7 +96,6 @@
                 </div>
             </div>
 
-            <!-- Recharge Amount Block -->
             <div class="section-block">
                 <div class="section-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -181,7 +174,6 @@
         
         const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // DOM Elements
         const loginSec = document.getElementById('login-section');
         const loadSec = document.getElementById('loading-section');
         const dashSec = document.getElementById('dashboard-section');
@@ -205,7 +197,6 @@
         const historyList = document.getElementById('history-list');
         const inputHistorySearch = document.getElementById('input-history-search');
 
-        // Modal Elements
         const confirmModal = document.getElementById('confirm-modal');
         const modalRecipientAvatar = document.getElementById('modal-recipient-avatar');
         const modalRecipientName = document.getElementById('modal-recipient-name');
@@ -225,22 +216,21 @@
             section.style.display = 'block';
         }
 
-        function showAlert(el, msg, type = 'error') {
+        function showAlert(el, msg, type) {
             el.textContent = msg;
             el.style.display = 'block';
-            el.className = `alert alert-${type}`;
-            setTimeout(() => el.style.display = 'none', 6000);
+            el.className = 'alert alert-' + (type || 'error');
+            setTimeout(function() { el.style.display = 'none'; }, 6000);
         }
 
-        // Tab Switching
-        tabRechargeBtn.addEventListener('click', () => {
+        tabRechargeBtn.addEventListener('click', function() {
             tabRechargeBtn.classList.add('active');
             tabHistoryBtn.classList.remove('active');
             viewRecharge.style.display = 'block';
             viewHistory.style.display = 'none';
         });
 
-        tabHistoryBtn.addEventListener('click', () => {
+        tabHistoryBtn.addEventListener('click', function() {
             tabHistoryBtn.classList.add('active');
             tabRechargeBtn.classList.remove('active');
             viewRecharge.style.display = 'none';
@@ -248,17 +238,15 @@
             loadHistory();
         });
 
-        // Quick Amount Chips
-        document.querySelectorAll('.chip').forEach(chip => {
-            chip.addEventListener('click', () => {
+        document.querySelectorAll('.chip').forEach(function(chip) {
+            chip.addEventListener('click', function() {
                 const add = parseInt(chip.getAttribute('data-amt'));
                 const current = parseInt(inputAmount.value || 0);
                 inputAmount.value = current + add;
             });
         });
 
-        // Init auth state
-        client.auth.onAuthStateChange((event, session) => {
+        client.auth.onAuthStateChange(function(event, session) {
             if (event === 'SIGNED_OUT') {
                 showSection(loginSec);
             } else if (session) {
@@ -269,7 +257,6 @@
         async function checkAccess(user) {
             showSection(loadSec);
             try {
-                // Check seller role tag
                 const { data: profile, error } = await client
                     .from('profiles')
                     .select('role_tags')
@@ -285,7 +272,6 @@
                     return;
                 }
 
-                // Fetch balance via dedicated RPC
                 await loadBalance();
                 showSection(dashSec);
             } catch (err) {
@@ -310,8 +296,7 @@
 
         btnRefreshBalance.addEventListener('click', loadBalance);
 
-        // Lookup User Recipient
-        btnFindUser.addEventListener('click', async () => {
+        btnFindUser.addEventListener('click', async function() {
             const id = inputPublicId.value.trim();
             if (id.length !== 9 || isNaN(id)) {
                 showAlert(rechargeAlert, "Enter a valid 9-digit user ID");
@@ -341,8 +326,7 @@
             }
         });
 
-        // Open Review Modal
-        btnReviewRecharge.addEventListener('click', () => {
+        btnReviewRecharge.addEventListener('click', function() {
             const id = inputPublicId.value.trim();
             const amount = parseInt(inputAmount.value);
 
@@ -355,7 +339,6 @@
                 return;
             }
 
-            // Populate modal
             modalRecipientName.textContent = currentRecipient.nickname || "User";
             modalRecipientId.textContent = "ID: " + currentRecipient.public_id;
             modalRecipientAvatar.src = currentRecipient.avatar_url || "/2.png";
@@ -369,12 +352,11 @@
         }
 
         modalBtnCancel.addEventListener('click', closeModal);
-        confirmModal.addEventListener('click', (e) => {
+        confirmModal.addEventListener('click', function(e) {
             if (e.target === confirmModal) closeModal();
         });
 
-        // Confirm & Execute Recharge
-        modalBtnConfirm.addEventListener('click', async () => {
+        modalBtnConfirm.addEventListener('click', async function() {
             const id = currentRecipient.public_id.toString();
             const amount = parseInt(inputAmount.value);
 
@@ -384,4 +366,85 @@
             modalConfirmLoader.style.display = 'block';
 
             try {
-                const { data, error } = await client.rpc('seller_recharge_user', {\n                    p_public_id: id,\n                    p_coin_amount: amount\n                });\n\n                if (error) throw error;\n\n                closeModal();\n                showAlert(rechargeAlert, `Successfully recharged ${amount.toLocaleString()} Golds to ${currentRecipient.nickname}!`, 'success');\n                inputAmount.value = \"\";\n                await loadBalance();\n            } catch (err) {\n                closeModal();\n                showAlert(rechargeAlert, err.message || \"Failed to process recharge\");\n            } finally {\n                modalBtnConfirm.disabled = false;\n                modalBtnCancel.disabled = false;\n                modalConfirmText.style.display = 'block';\n                modalConfirmLoader.style.display = 'none';\n            }\n        });\n\n        // Load History\n        async function loadHistory() {\n            historyList.innerHTML = '<div class=\"text-center text-muted\" style=\"padding: 20px;\">Loading...</div>';\n            try {\n                const query = inputHistorySearch.value.trim();\n                const { data, error } = await client.rpc('get_coin_seller_activity_history', {\n                    p_query: query,\n                    p_limit: 50\n                });\n                if (error) throw error;\n                if (!data || data.length === 0) {\n                    historyList.innerHTML = '<div class=\"text-center text-muted\" style=\"padding: 30px;\">No transactions found</div>';\n                    return;\n                }\n                historyList.innerHTML = data.map(item => `\n                    <div class=\"history-item\">\n                        <div class=\"history-info\">\n                            <img src=\"${item.recipient_avatar_url || '/2.png'}\" style=\"width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #eee;\">\n                            <div>\n                                <div style=\"font-weight: 700; font-size: 0.9rem;\">${item.recipient_name || 'User'}</div>\n                                <div style=\"font-size: 0.78rem; color: #64748B;\">ID: ${item.recipient_public_id || 'N/A'} · ${new Date(item.created_at).toLocaleDateString()}</div>\n                            </div>\n                        </div>\n                        <div class=\"history-amount\">-${parseInt(item.coin_amount).toLocaleString()} G</div>\n                    </div>\n                `).join('');\n            } catch (err) {\n                historyList.innerHTML = `<div class=\"text-center alert alert-error\" style=\"display:block;\">${err.message || 'Failed to load history'}</div>`;\n            }\n        }\n\n        let searchTimeout;\n        inputHistorySearch.addEventListener('input', () => {\n            clearTimeout(searchTimeout);\n            searchTimeout = setTimeout(loadHistory, 400);\n        });\n\n        // Login action\n        document.getElementById('btn-login').addEventListener('click', async () => {\n            const { error } = await client.auth.signInWithOAuth({\n                provider: 'google',\n                options: {\n                    redirectTo: 'https://www.solas-live.online/seller-coin/'\n                }\n            });\n            if (error) showAlert(loginAlert, error.message);\n        });\n\n        // Logout action\n        document.getElementById('btn-logout').addEventListener('click', async () => {\n            await client.auth.signOut();\n        });\n\n        // Initial check\n        client.auth.getSession().then(({ data: { session } }) => {\n            if (session) {\n                checkAccess(session.user);\n            } else {\n                showSection(loginSec);\n            }\n        });\n    </script>\n</body>\n</html>\n
+                const { data, error } = await client.rpc('seller_recharge_user', {
+                    p_public_id: id,
+                    p_coin_amount: amount
+                });
+
+                if (error) throw error;
+
+                closeModal();
+                showAlert(rechargeAlert, "Successfully recharged " + amount.toLocaleString() + " Golds to " + currentRecipient.nickname + "!", "success");
+                inputAmount.value = "";
+                await loadBalance();
+            } catch (err) {
+                closeModal();
+                showAlert(rechargeAlert, err.message || "Failed to process recharge");
+            } finally {
+                modalBtnConfirm.disabled = false;
+                modalBtnCancel.disabled = false;
+                modalConfirmText.style.display = 'block';
+                modalConfirmLoader.style.display = 'none';
+            }
+        });
+
+        async function loadHistory() {
+            historyList.innerHTML = '<div class="text-center text-muted" style="padding: 20px;">Loading...</div>';
+            try {
+                const query = inputHistorySearch.value.trim();
+                const { data, error } = await client.rpc('get_coin_seller_activity_history', {
+                    p_query: query,
+                    p_limit: 50
+                });
+                if (error) throw error;
+                if (!data || data.length === 0) {
+                    historyList.innerHTML = '<div class="text-center text-muted" style="padding: 30px;">No transactions found</div>';
+                    return;
+                }
+                historyList.innerHTML = data.map(function(item) {
+                    return '<div class="history-item">' +
+                        '<div class="history-info">' +
+                            '<img src="' + (item.recipient_avatar_url || '/2.png') + '" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #eee;">' +
+                            '<div>' +
+                                '<div style="font-weight: 700; font-size: 0.9rem;">' + (item.recipient_name || 'User') + '</div>' +
+                                '<div style="font-size: 0.78rem; color: #64748B;">ID: ' + (item.recipient_public_id || 'N/A') + ' · ' + new Date(item.created_at).toLocaleDateString() + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="history-amount">-' + parseInt(item.coin_amount).toLocaleString() + ' G</div>' +
+                    '</div>';
+                }).join('');
+            } catch (err) {
+                historyList.innerHTML = '<div class="text-center alert alert-error" style="display:block;">' + (err.message || 'Failed to load history') + '</div>';
+            }
+        }
+
+        let searchTimeout;
+        inputHistorySearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadHistory, 400);
+        });
+
+        document.getElementById('btn-login').addEventListener('click', async function() {
+            const { error } = await client.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: 'https://www.solas-live.online/seller-coin/'
+                }
+            });
+            if (error) showAlert(loginAlert, error.message);
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', async function() {
+            await client.auth.signOut();
+        });
+
+        client.auth.getSession().then(function(res) {
+            if (res.data && res.data.session) {
+                checkAccess(res.data.session.user);
+            } else {
+                showSection(loginSec);
+            }
+        });
+    </script>
+</body>
+</html>
