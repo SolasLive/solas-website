@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/seller-coin/styles.css">
     <!-- Load Supabase from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -16,7 +16,7 @@
     <!-- LOGIN SECTION -->
     <div class="card" id="login-section">
         <div class="text-center mb-4">
-            <img src="../2.png" alt="My Solas" style="height: 40px; margin-bottom: 16px;">
+            <img src="/2.png" alt="My Solas" style="height: 40px; margin-bottom: 16px;">
             <h2>Coin Seller Portal</h2>
             <p class="text-muted">Secure access for authorized coin sellers.</p>
         </div>
@@ -44,7 +44,7 @@
     <!-- DASHBOARD SECTION -->
     <div class="card" id="dashboard-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <img src="../2.png" alt="My Solas" style="height: 24px;">
+            <img src="/2.png" alt="My Solas" style="height: 24px;">
             <button id="btn-logout" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: 600; font-family: 'Inter';">Sign Out</button>
         </div>
 
@@ -88,7 +88,7 @@
         const SUPABASE_URL = 'https://api.solas-live.online';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3MTY0MTY0LCJleHAiOjE5NDQ4NDQxNjR9.fyTD5-J7jJDDuyMv5QGu7Yu7if-GsblEpB8tT_eOxAg';
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // DOM Elements
         const loginSec = document.getElementById('login-section');
@@ -117,7 +117,7 @@
         }
 
         // Init auth state
-        supabase.auth.onAuthStateChange((event, session) => {
+        client.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT') {
                 showSection(loginSec);
             } else if (session) {
@@ -129,7 +129,7 @@
             showSection(loadSec);
             try {
                 // Check if user has seller tag
-                const { data: profile, error } = await supabase
+                const { data: profile, error } = await client
                     .from('profiles')
                     .select('role_tags')
                     .eq('id', user.id)
@@ -138,7 +138,7 @@
                 if (error) throw error;
 
                 if (!profile.role_tags || !profile.role_tags.includes('seller')) {
-                    await supabase.auth.signOut();
+                    await client.auth.signOut();
                     showAlert(loginAlert, "Unauthorized. You are not a registered Coin Seller.");
                     showSection(loginSec);
                     return;
@@ -149,14 +149,14 @@
                 showSection(dashSec);
             } catch (err) {
                 console.error(err);
-                await supabase.auth.signOut();
+                await client.auth.signOut();
                 showAlert(loginAlert, "Error loading profile.");
                 showSection(loginSec);
             }
         }
 
         async function loadBalance(userId) {
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from('seller_wallets')
                 .select('coin_balance')
                 .eq('user_id', userId)
@@ -171,7 +171,7 @@
 
         // Login action
         document.getElementById('btn-login').addEventListener('click', async () => {
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { error } = await client.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: window.location.origin + window.location.pathname
@@ -182,7 +182,7 @@
 
         // Logout action
         document.getElementById('btn-logout').addEventListener('click', async () => {
-            await supabase.auth.signOut();
+            await client.auth.signOut();
         });
 
         // Form submit
@@ -196,7 +196,7 @@
             btnLoader.style.display = 'block';
 
             try {
-                const { data, error } = await supabase.rpc('seller_recharge_user', {
+                const { data, error } = await client.rpc('seller_recharge_user', {
                     p_public_id: publicId,
                     p_coin_amount: amount
                 });
@@ -207,7 +207,7 @@
                 form.reset();
                 
                 // Update balance on screen
-                const session = await supabase.auth.getSession();
+                const session = await client.auth.getSession();
                 if (session.data.session) {
                     await loadBalance(session.data.session.user.id);
                 }
@@ -221,7 +221,7 @@
         });
 
         // Initial check
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        client.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 checkAccess(session.user);
             } else {
